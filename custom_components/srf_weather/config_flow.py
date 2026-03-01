@@ -1,4 +1,22 @@
-"""Config flow for SRF Weather integration."""
+"""Config flow for the SRF Weather integration.
+
+This module implements the UI setup wizard that runs when a user adds SRF
+Weather via *Settings → Devices & Services → Add Integration*.
+
+Flow overview
+-------------
+Step ``user`` (the only step):
+  1. Display a form asking for name, API credentials, and location.
+  2. On submission, derive a unique ID from the rounded lat/lon pair to
+     prevent duplicate entries for the same location.
+  3. Validate the credentials against the live API.
+  4. Create the config entry on success, or re-display the form with an
+     inline error message on failure.
+
+Error keys (defined in ``strings.json`` / ``translations/``):
+  - ``cannot_connect`` – network-level failure reaching the token endpoint.
+  - ``invalid_auth``   – the API rejected the client_id / client_secret.
+"""
 
 from __future__ import annotations
 
@@ -20,23 +38,49 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle the UI config flow for SRF Weather."""
+    """Handle the multi-step UI config flow for SRF Weather.
+
+    Currently only one step (``user``) is needed, but the class can be
+    extended with an ``async_step_reauth`` method in the future to handle
+    credential re-entry after an auth failure without removing the entry.
+
+    Class attributes:
+        VERSION: Schema version stored in the config entry.  Increment when
+                 the ``data`` dict structure changes and a migration is needed.
+    """
 
     VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Handle the initial setup step shown to the user.
+
+        On the first call ``user_input`` is ``None`` (HA just wants the form).
+        On subsequent calls it contains the submitted values.
+
+        Args:
+            user_input: Dict of field values from the submitted form, or
+                        ``None`` when the form is being rendered for the first
+                        time.
+
+        Returns:
+            A ``ConfigFlowResult`` – either ``async_show_form`` (render or
+            re-render the form) or ``async_create_entry`` (success).
+        """
         errors: dict[str, str] = {}
 
         if user_input is not None:
             lat = user_input[CONF_LATITUDE]
             lon = user_input[CONF_LONGITUDE]
 
-            # Use lat/lon as unique ID to prevent duplicate entries.
+            # Build a stable unique ID from the location so HA can detect and
+            # abort duplicate config entries for the same coordinates.
             await self.async_set_unique_id(f"{lat:.4f}_{lon:.4f}")
             self._abort_if_unique_id_configured()
 
+            # Re-use the HA-managed session; do NOT create a bare ClientSession
+            # here as it would never be properly closed.
             session = async_get_clientsession(self.hass)
             api = SRFWeatherAPI(
                 user_input[CONF_CLIENT_ID],
@@ -47,18 +91,23 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 valid = await api.validate_credentials()
             except aiohttp.ClientError:
+                # Network-level failure (DNS, timeout, TLS, …)
                 errors["base"] = "cannot_connect"
             else:
                 if not valid:
+                    # Connected fine but credentials were rejected by the API.
                     errors["base"] = "invalid_auth"
 
             if not errors:
+                # All good – persist the entry.  ``title`` is shown in the
+                # integrations list; ``data`` is stored encrypted on disk.
                 return self.async_create_entry(
                     title=user_input[CONF_NAME],
                     data=user_input,
                 )
 
-        # Pre-fill lat/lon from HA home location.
+        # Pre-populate lat/lon from the HA home location so most users only
+        # need to paste their API credentials and hit submit.
         default_lat = self.hass.config.latitude
         default_lon = self.hass.config.longitude
 
@@ -75,5 +124,5 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
-            errors=errors,
+            errors=errors,  # Empty dict = no errors shown; keys map to strings.json
         )

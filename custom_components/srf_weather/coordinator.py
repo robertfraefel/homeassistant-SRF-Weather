@@ -1,4 +1,19 @@
-"""DataUpdateCoordinator for SRF Weather."""
+"""DataUpdateCoordinator for SRF Weather.
+
+The coordinator is the single source of truth for forecast data within a
+config entry.  It owns the polling schedule and ensures that all entities
+(weather + sensors) share the same fetched payload without making redundant
+API calls.
+
+How it fits into HA's architecture
+------------------------------------
+1. ``__init__.py`` creates one coordinator per config entry.
+2. The coordinator calls ``SRFWeatherAPI.get_forecast`` on every poll.
+3. All ``CoordinatorEntity`` subclasses (``SRFWeatherEntity``,
+   ``SRFWeatherSensor``) subscribe to the coordinator.  HA calls their
+   ``_handle_coordinator_update`` callback automatically whenever fresh data
+   arrives, which triggers a state write to the HA state machine.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +30,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SRFWeatherCoordinator(DataUpdateCoordinator[dict]):
-    """Fetches and caches SRF Weather forecast data."""
+    """Polls the SRF Meteo API and caches the latest forecast data.
+
+    Inherits from ``DataUpdateCoordinator[dict]`` where the generic type
+    parameter ``dict`` is the type of ``coordinator.data`` – the parsed JSON
+    response from ``/forecastpoint/{geolocationId}``.
+
+    Attributes:
+        api:       The ``SRFWeatherAPI`` instance used for HTTP calls.
+        latitude:  WGS-84 latitude of the forecast location.
+        longitude: WGS-84 longitude of the forecast location.
+    """
 
     def __init__(
         self,
@@ -24,10 +49,21 @@ class SRFWeatherCoordinator(DataUpdateCoordinator[dict]):
         latitude: float,
         longitude: float,
     ) -> None:
+        """Initialise the coordinator.
+
+        Args:
+            hass:      The Home Assistant instance.
+            api:       Configured ``SRFWeatherAPI`` ready to make requests.
+            latitude:  Latitude of the location to fetch forecasts for.
+            longitude: Longitude of the location to fetch forecasts for.
+        """
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
+            # Poll every 30 minutes.  SRF Meteo updates its model output
+            # roughly once per hour, so 30-minute polling gives timely data
+            # while staying well within typical API rate limits.
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
         )
         self.api = api
@@ -35,7 +71,21 @@ class SRFWeatherCoordinator(DataUpdateCoordinator[dict]):
         self.longitude = longitude
 
     async def _async_update_data(self) -> dict:
-        """Fetch latest forecast data from the SRF API."""
+        """Fetch the latest forecast from the SRF API.
+
+        This method is called automatically by ``DataUpdateCoordinator`` on
+        every poll interval and also during the first-refresh triggered by
+        ``__init__.py``.
+
+        Returns:
+            The raw ``ForecastPointWeek`` JSON payload as a Python dict.
+
+        Raises:
+            UpdateFailed: Wraps any ``SRFWeatherAuthError`` or
+                          ``SRFWeatherAPIError`` so that HA can log the error
+                          and mark the integration as unavailable without
+                          crashing the event loop.
+        """
         try:
             return await self.api.get_forecast(self.latitude, self.longitude)
         except SRFWeatherAuthError as exc:
