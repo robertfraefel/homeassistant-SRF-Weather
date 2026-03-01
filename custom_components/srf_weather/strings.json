@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SRF Weather",
+        "description": "Enter your SRG SSR API credentials. You can obtain them at https://developer.srgssr.ch",
+        "data": {
+          "name": "Name",
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the SRF Weather API. Please check your network connection.",
+      "invalid_auth": "Invalid Client ID or Client Secret. Please check your credentials."
+    },
+    "abort": {
+      "already_configured": "A weather location with these coordinates is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "felt_temperature": {
+        "name": "Felt Temperature"
+      },
+      "dew_point": {
+        "name": "Dew Point"
+      },
+      "sunshine_duration": {
+        "name": "Sunshine Duration"
+      },
+      "irradiance": {
+        "name": "Solar Irradiance"
+      },
+      "fresh_snow": {
+        "name": "Fresh Snow"
+      },
+      "uv_index": {
+        "name": "UV Index"
+      },
+      "sunshine_hours": {
+        "name": "Sunshine Hours"
+      },
+      "precipitation_probability": {
+        "name": "Precipitation Probability"
+      }
+    }
+  }
+}

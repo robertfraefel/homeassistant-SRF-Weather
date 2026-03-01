@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SRF Wetter",
+        "description": "Gib deine SRG SSR API-Zugangsdaten ein. Diese erhältst du unter https://developer.srgssr.ch",
+        "data": {
+          "name": "Name",
+          "client_id": "Client-ID",
+          "client_secret": "Client-Secret",
+          "latitude": "Breitengrad",
+          "longitude": "Längengrad"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur SRF-Wetter-API fehlgeschlagen. Bitte Netzwerkverbindung prüfen.",
+      "invalid_auth": "Ungültige Client-ID oder Client-Secret. Bitte Zugangsdaten überprüfen."
+    },
+    "abort": {
+      "already_configured": "Ein Wetterstandort mit diesen Koordinaten ist bereits konfiguriert."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "felt_temperature": {
+        "name": "Gefühlte Temperatur"
+      },
+      "dew_point": {
+        "name": "Taupunkt"
+      },
+      "sunshine_duration": {
+        "name": "Sonnenscheindauer"
+      },
+      "irradiance": {
+        "name": "Solare Einstrahlung"
+      },
+      "fresh_snow": {
+        "name": "Neuschnee"
+      },
+      "uv_index": {
+        "name": "UV-Index"
+      },
+      "sunshine_hours": {
+        "name": "Sonnenstunden"
+      },
+      "precipitation_probability": {
+        "name": "Niederschlagswahrscheinlichkeit"
+      }
+    }
+  }
+}

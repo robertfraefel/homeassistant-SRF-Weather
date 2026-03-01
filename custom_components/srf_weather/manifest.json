@@ -1,0 +1,12 @@
+{
+  "domain": "srf_weather",
+  "name": "SRF Weather",
+  "version": "1.0.0",
+  "documentation": "https://github.com/robertfraefel/homeassistant-SRF-Weather",
+  "issue_tracker": "https://github.com/robertfraefel/homeassistant-SRF-Weather/issues",
+  "codeowners": ["@robertfraefel"],
+  "requirements": [],
+  "dependencies": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
