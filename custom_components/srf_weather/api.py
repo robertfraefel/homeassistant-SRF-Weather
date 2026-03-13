@@ -90,6 +90,7 @@ class SRFWeatherAPI:
         self._session = session
         self._token: str | None = None
         self._token_expires: datetime | None = None
+        self._geo_id_cache: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -168,6 +169,60 @@ class SRFWeatherAPI:
         return self._token  # type: ignore[return-value]
 
     # ------------------------------------------------------------------
+    async def _get_geolocation_id(self, lat: float, lon: float) -> str:
+        """Look up the SRF geolocation ID for the given coordinates.
+
+        Calls ``GET /srf-meteo/v2/geolocations?latitude={lat}&longitude={lon}``
+        and returns the ``id`` of the first (nearest) result.  The result is
+        cached so that subsequent forecast polls do not repeat the lookup.
+
+        Raises:
+            SRFWeatherAPIError: No geolocation found or network failure.
+        """
+        cache_key = f"{lat:.4f},{lon:.4f}"
+        if cache_key in self._geo_id_cache:
+            return self._geo_id_cache[cache_key]
+
+        token = await self._get_token()
+        headers = {"Authorization": f"Bearer {token}"}
+        url = f"{BASE_URL}/geolocations"
+        params = {"latitude": str(lat), "longitude": str(lon)}
+
+        try:
+            async with self._session.get(
+                url,
+                headers=headers,
+                params=params,
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as resp:
+                if resp.status in (401, 403):
+                    self._token = None
+                    raise SRFWeatherAuthError(
+                        f"Unauthorized fetching geolocations (HTTP {resp.status})"
+                    )
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise SRFWeatherAPIError(
+                        f"Geolocation request failed (HTTP {resp.status}): {body}"
+                    )
+                data = await resp.json()
+                if not data:
+                    raise SRFWeatherAPIError(
+                        f"No geolocation found for coordinates {lat},{lon}"
+                    )
+                # The API returns a list; pick the first (nearest) entry.
+                geo_id = data[0]["id"]
+                self._geo_id_cache[cache_key] = geo_id
+                _LOGGER.debug(
+                    "SRF Weather: resolved (%s, %s) -> geolocation ID %s",
+                    lat, lon, geo_id,
+                )
+                return geo_id
+        except aiohttp.ClientError as exc:
+            raise SRFWeatherAPIError(
+                f"Network error fetching geolocations: {exc}"
+            ) from exc
+
     # Public API
     # ------------------------------------------------------------------
 
@@ -203,8 +258,8 @@ class SRFWeatherAPI:
             SRFWeatherAPIError:  HTTP 404 (location not found), any other
                                  non-200 status, or a network failure.
         """
-        # The SRF API expects four decimal places of precision in the geo ID.
-        geo_id = f"{lat:.4f},{lon:.4f}"
+        # Look up the geolocation ID via the /geolocations endpoint.
+        geo_id = await self._get_geolocation_id(lat, lon)
         token = await self._get_token()
         headers = {"Authorization": f"Bearer {token}"}
         url = f"{BASE_URL}/forecastpoint/{geo_id}"
