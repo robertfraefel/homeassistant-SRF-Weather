@@ -23,8 +23,11 @@ from datetime import timedelta
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import SRFWeatherAPI, SRFWeatherAPIError, SRFWeatherAuthError
+from .api import SRFWeatherAPI, SRFWeatherAPIError, SRFWeatherAuthError, SRFWeatherRateLimitError
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+
+# Back-off interval (in seconds) when the API signals quota exhaustion.
+RATE_LIMIT_BACKOFF = 3600  # 1 hour
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,8 +90,26 @@ class SRFWeatherCoordinator(DataUpdateCoordinator[dict]):
                           crashing the event loop.
         """
         try:
-            return await self.api.get_forecast(self.latitude, self.longitude)
+            data = await self.api.get_forecast(self.latitude, self.longitude)
+        except SRFWeatherRateLimitError as exc:
+            # Back off to avoid burning through the daily quota with retries.
+            self.update_interval = timedelta(seconds=RATE_LIMIT_BACKOFF)
+            _LOGGER.warning(
+                "SRF Weather API quota exceeded – backing off to %s s",
+                RATE_LIMIT_BACKOFF,
+            )
+            raise UpdateFailed(f"SRF Weather API quota exceeded: {exc}") from exc
         except SRFWeatherAuthError as exc:
             raise UpdateFailed(f"SRF Weather authentication error: {exc}") from exc
         except SRFWeatherAPIError as exc:
             raise UpdateFailed(f"SRF Weather API error: {exc}") from exc
+
+        # Restore normal polling interval after a successful fetch
+        # (in case it was increased due to a previous rate-limit).
+        if self.update_interval != timedelta(seconds=DEFAULT_SCAN_INTERVAL):
+            self.update_interval = timedelta(seconds=DEFAULT_SCAN_INTERVAL)
+            _LOGGER.info(
+                "SRF Weather API recovered – polling interval restored to %s s",
+                DEFAULT_SCAN_INTERVAL,
+            )
+        return data

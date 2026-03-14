@@ -26,7 +26,7 @@ from typing import Any
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
@@ -125,4 +125,60 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=schema,
             errors=errors,  # Empty dict = no errors shown; keys map to strings.json
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle reconfiguration of an existing entry."""
+        errors: dict[str, str] = {}
+        entry: ConfigEntry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            lat = user_input[CONF_LATITUDE]
+            lon = user_input[CONF_LONGITUDE]
+            new_unique_id = f"{lat:.4f}_{lon:.4f}"
+
+            # If coordinates changed, check for duplicates.
+            if new_unique_id != entry.unique_id:
+                await self.async_set_unique_id(new_unique_id)
+                self._abort_if_unique_id_configured()
+
+            session = async_get_clientsession(self.hass)
+            api = SRFWeatherAPI(
+                user_input[CONF_CLIENT_ID],
+                user_input[CONF_CLIENT_SECRET],
+                session,
+            )
+
+            try:
+                valid = await api.validate_credentials()
+            except aiohttp.ClientError:
+                errors["base"] = "cannot_connect"
+            else:
+                if not valid:
+                    errors["base"] = "invalid_auth"
+
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=new_unique_id,
+                    title=user_input[CONF_NAME],
+                    data=user_input,
+                )
+
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME, default=entry.data.get(CONF_NAME, "SRF Weather")): str,
+                vol.Required(CONF_CLIENT_ID, default=entry.data.get(CONF_CLIENT_ID, "")): str,
+                vol.Required(CONF_CLIENT_SECRET, default=entry.data.get(CONF_CLIENT_SECRET, "")): str,
+                vol.Required(CONF_LATITUDE, default=entry.data.get(CONF_LATITUDE)): cv.latitude,
+                vol.Required(CONF_LONGITUDE, default=entry.data.get(CONF_LONGITUDE)): cv.longitude,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
         )

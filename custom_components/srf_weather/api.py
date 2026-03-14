@@ -57,6 +57,14 @@ class SRFWeatherAPIError(Exception):
     """
 
 
+class SRFWeatherRateLimitError(SRFWeatherAPIError):
+    """Raised when the API returns HTTP 429 (quota exceeded).
+
+    Callers should back off significantly to avoid wasting the remaining
+    daily quota on futile retries.
+    """
+
+
 class SRFWeatherAPI:
     """Async client for the SRF Meteo v2 REST API.
 
@@ -129,6 +137,11 @@ class SRFWeatherAPI:
                 if resp.status in (401, 403):
                     raise SRFWeatherAuthError(
                         f"Invalid credentials (HTTP {resp.status})"
+                    )
+                if resp.status == 429:
+                    body = await resp.text()
+                    raise SRFWeatherRateLimitError(
+                        f"API quota exceeded (HTTP 429): {body}"
                     )
                 if resp.status != 200:
                     body = await resp.text()
@@ -311,6 +324,11 @@ class SRFWeatherAPI:
                 if resp.status == 404:
                     raise SRFWeatherAPIError(
                         f"Location not found for coordinates {lat},{lon}"
+                    )
+                if resp.status == 429:
+                    body = await resp.text()
+                    raise SRFWeatherRateLimitError(
+                        f"API quota exceeded (HTTP 429): {body}"
                     )
                 if resp.status != 200:
                     body = await resp.text()

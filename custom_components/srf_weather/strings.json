@@ -11,6 +11,17 @@
           "latitude": "Latitude",
           "longitude": "Longitude"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure SRF Weather",
+        "description": "Update your SRF Weather configuration.",
+        "data": {
+          "name": "Name",
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
       }
     },
     "error": {
