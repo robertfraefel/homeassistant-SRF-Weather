@@ -28,6 +28,7 @@ The response is a ``ForecastPointWeek`` JSON object containing:
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -39,9 +40,6 @@ import aiohttp
 from .const import BASE_URL, TOKEN_URL
 
 _LOGGER = logging.getLogger(__name__)
-
-# Persistent file cache for geolocation ID lookups (survives HA restarts).
-_GEO_CACHE_FILE = os.path.join(os.path.dirname(__file__), ".geo_cache.json")
 
 
 class SRFWeatherAuthError(Exception):
@@ -104,6 +102,15 @@ class SRFWeatherAPI:
         self._token: str | None = None
         self._token_expires: datetime | None = None
         self._geo_id_cache: dict[str, str] = {}
+        self._geo_cache_file: str | None = None
+
+    def set_storage_dir(self, config_dir: str) -> None:
+        """Set the directory for persistent cache files.
+
+        Args:
+            config_dir: HA config directory (``hass.config.config_dir``).
+        """
+        self._geo_cache_file = os.path.join(config_dir, ".srf_weather_geo_cache.json")
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -202,19 +209,20 @@ class SRFWeatherAPI:
             return self._geo_id_cache[cache_key]
 
         # Check persistent file cache
-        try:
-            if os.path.exists(_GEO_CACHE_FILE):
-                with open(_GEO_CACHE_FILE, "r") as fh:
-                    file_cache = json.load(fh)
-                if cache_key in file_cache:
-                    self._geo_id_cache[cache_key] = file_cache[cache_key]
+        if self._geo_cache_file:
+            try:
+                geo_id = await asyncio.to_thread(
+                    self._read_geo_cache, cache_key
+                )
+                if geo_id is not None:
+                    self._geo_id_cache[cache_key] = geo_id
                     _LOGGER.debug(
                         "SRF Weather: loaded geo ID from file cache: %s",
-                        file_cache[cache_key],
+                        geo_id,
                     )
-                    return file_cache[cache_key]
-        except (OSError, json.JSONDecodeError, KeyError):
-            pass  # file missing or corrupt - fall through to API
+                    return geo_id
+            except (OSError, json.JSONDecodeError, KeyError):
+                pass  # file missing or corrupt - fall through to API
 
         token = await self._get_token()
         headers = {"Authorization": f"Bearer {token}"}
@@ -253,16 +261,13 @@ class SRFWeatherAPI:
                 self._geo_id_cache[cache_key] = geo_id
 
                 # Persist to file so we survive HA restarts
-                try:
-                    file_cache = {}
-                    if os.path.exists(_GEO_CACHE_FILE):
-                        with open(_GEO_CACHE_FILE, "r") as fh:
-                            file_cache = json.load(fh)
-                    file_cache[cache_key] = geo_id
-                    with open(_GEO_CACHE_FILE, "w") as fh:
-                        json.dump(file_cache, fh)
-                except OSError:
-                    pass  # non-critical
+                if self._geo_cache_file:
+                    try:
+                        await asyncio.to_thread(
+                            self._write_geo_cache, cache_key, geo_id
+                        )
+                    except OSError:
+                        pass  # non-critical
 
                 _LOGGER.debug(
                     "SRF Weather: resolved (%s, %s) -> geolocation ID %s",
@@ -273,6 +278,30 @@ class SRFWeatherAPI:
             raise SRFWeatherAPIError(
                 f"Network error fetching geolocations: {exc}"
             ) from exc
+
+    # ------------------------------------------------------------------
+    # Synchronous cache helpers (run via asyncio.to_thread)
+    # ------------------------------------------------------------------
+
+    def _read_geo_cache(self, cache_key: str) -> str | None:
+        """Read a geo ID from the persistent file cache (blocking)."""
+        if self._geo_cache_file and os.path.exists(self._geo_cache_file):
+            with open(self._geo_cache_file, "r") as fh:
+                file_cache = json.load(fh)
+            return file_cache.get(cache_key)
+        return None
+
+    def _write_geo_cache(self, cache_key: str, geo_id: str) -> None:
+        """Write a geo ID to the persistent file cache (blocking)."""
+        if not self._geo_cache_file:
+            return
+        file_cache: dict[str, str] = {}
+        if os.path.exists(self._geo_cache_file):
+            with open(self._geo_cache_file, "r") as fh:
+                file_cache = json.load(fh)
+        file_cache[cache_key] = geo_id
+        with open(self._geo_cache_file, "w") as fh:
+            json.dump(file_cache, fh)
 
     # Public API
     # ------------------------------------------------------------------

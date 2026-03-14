@@ -54,6 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data[CONF_CLIENT_SECRET],
         session,
     )
+    api.set_storage_dir(hass.config.config_dir)
 
     coordinator = SRFWeatherCoordinator(
         hass,
