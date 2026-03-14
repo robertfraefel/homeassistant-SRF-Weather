@@ -16,6 +16,9 @@ functions without needing a direct reference.
 
 from __future__ import annotations
 
+import pathlib
+
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, Platform
 from homeassistant.core import HomeAssistant
@@ -24,6 +27,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import SRFWeatherAPI
 from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, DOMAIN
 from .coordinator import SRFWeatherCoordinator
+
+ICONS_URL = f"/{DOMAIN}/icons"
+ICONS_DIR = str(pathlib.Path(__file__).parent / "icons")
 
 # Platforms that this integration provides entities for.
 # HA will call ``async_setup_entry`` in each platform module automatically.
@@ -66,6 +72,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Block until the first successful fetch.  If this raises, HA marks the
     # entry as "not ready" and retries with exponential back-off.
     await coordinator.async_config_entry_first_refresh()
+
+    # Register static path for SRF weather icons (only once per HA instance).
+    if DOMAIN not in hass.data:
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(ICONS_URL, ICONS_DIR, cache_headers=True)]
+        )
 
     # Store coordinator so platform modules can retrieve it by entry_id.
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator

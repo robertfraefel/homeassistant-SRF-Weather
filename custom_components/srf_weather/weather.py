@@ -75,6 +75,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, SYMBOL_TO_CONDITION
 from .coordinator import SRFWeatherCoordinator
 
+ICONS_URL = f"/{DOMAIN}/icons"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -171,15 +173,21 @@ class SRFWeatherEntity(CoordinatorEntity[SRFWeatherCoordinator], WeatherEntity):
 
     @property
     def condition(self) -> str | None:
-        """Current weather condition string, mapped from ``symbol_code``.
-
-        Returns ``None`` if no symbol code is available or if the code is not
-        in ``SYMBOL_TO_CONDITION`` (unknown code).
-        """
+        """Current weather condition string, mapped from ``symbol_code``."""
         symbol = self._current_hour.get("symbol_code")
         if symbol is None:
             return None
         return SYMBOL_TO_CONDITION.get(symbol)
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Return path to the SRF weather icon for the current symbol code."""
+        symbol = self._current_hour.get("symbol_code")
+        if symbol is None:
+            return None
+        if symbol < 0:
+            return f"{ICONS_URL}/night/{symbol}.svg"
+        return f"{ICONS_URL}/day/{symbol}.svg"
 
     @property
     def native_temperature(self) -> float | None:

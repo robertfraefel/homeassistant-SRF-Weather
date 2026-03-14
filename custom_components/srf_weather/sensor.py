@@ -79,6 +79,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, SYMBOL_TO_CONDITION
 from .coordinator import SRFWeatherCoordinator
 
+ICONS_URL = f"/{DOMAIN}/icons"
+
 
 @dataclass(frozen=True, kw_only=True)
 class SRFSensorEntityDescription(SensorEntityDescription):
@@ -543,3 +545,20 @@ class SRFWeatherSensor(CoordinatorEntity[SRFWeatherCoordinator], SensorEntity):
             return None
 
         return self.entity_description.value_fn(rows[idx])
+
+    @property
+    def entity_picture(self) -> str | None:
+        """Return SRF weather icon URL for condition sensors."""
+        if "_condition" not in self.entity_description.key:
+            return None
+        data = self.coordinator.data
+        rows = data.get("days", [])
+        idx = self.entity_description.index
+        if idx >= len(rows):
+            return None
+        symbol = rows[idx].get("symbol_code")
+        if symbol is None:
+            return None
+        if symbol < 0:
+            return f"{ICONS_URL}/night/{symbol}.svg"
+        return f"{ICONS_URL}/day/{symbol}.svg"
