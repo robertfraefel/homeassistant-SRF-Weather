@@ -76,7 +76,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, SYMBOL_TO_CONDITION
 from .coordinator import SRFWeatherCoordinator
 
 
@@ -97,6 +97,8 @@ class SRFSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[dict], Any]
     # Determines whether to read from the hourly or daily forecast array.
     source: str = "hourly"
+    # Index into the source array (0 = current, 1 = next, etc.)
+    index: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -363,6 +365,94 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
 )
 
 
+def _build_forecast_descriptions() -> tuple[SRFSensorEntityDescription, ...]:
+    """Generate forecast sensor descriptions for days 1–6."""
+    descriptions: list[SRFSensorEntityDescription] = []
+    for day in range(1, 7):
+        label = f"d{day}"
+        descriptions.extend([
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_condition",
+                translation_key=f"forecast_{label}_condition",
+                native_unit_of_measurement=None,
+                icon="mdi:weather-partly-cloudy",
+                value_fn=lambda d: SYMBOL_TO_CONDITION.get(d.get("symbol_code")),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_temp_max",
+                translation_key=f"forecast_{label}_temp_max",
+                native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+                device_class=SensorDeviceClass.TEMPERATURE,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:thermometer-high",
+                value_fn=lambda d: d.get("TX_C"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_temp_min",
+                translation_key=f"forecast_{label}_temp_min",
+                native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+                device_class=SensorDeviceClass.TEMPERATURE,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:thermometer-low",
+                value_fn=lambda d: d.get("TN_C"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_precipitation",
+                translation_key=f"forecast_{label}_precipitation",
+                native_unit_of_measurement=UnitOfLength.MILLIMETERS,
+                device_class=SensorDeviceClass.PRECIPITATION,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:water",
+                value_fn=lambda d: d.get("RRR_MM"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_precip_prob",
+                translation_key=f"forecast_{label}_precip_prob",
+                native_unit_of_measurement=PERCENTAGE,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:weather-rainy",
+                value_fn=lambda d: d.get("PROBPCP_PERCENT"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_wind_speed",
+                translation_key=f"forecast_{label}_wind_speed",
+                native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+                device_class=SensorDeviceClass.WIND_SPEED,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:weather-windy",
+                value_fn=lambda d: d.get("FF_KMH"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
+                key=f"forecast_{label}_sunshine_hours",
+                translation_key=f"forecast_{label}_sunshine_hours",
+                native_unit_of_measurement=UnitOfTime.HOURS,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:weather-sunny",
+                value_fn=lambda d: d.get("SUN_H"),
+                source="daily",
+                index=day,
+            ),
+        ])
+    return tuple(descriptions)
+
+
+FORECAST_DESCRIPTIONS = _build_forecast_descriptions()
+
+ALL_SENSOR_DESCRIPTIONS = SENSOR_DESCRIPTIONS + FORECAST_DESCRIPTIONS
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -381,7 +471,7 @@ async def async_setup_entry(
     coordinator: SRFWeatherCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         SRFWeatherSensor(coordinator, entry, description)
-        for description in SENSOR_DESCRIPTIONS
+        for description in ALL_SENSOR_DESCRIPTIONS
     )
 
 
@@ -448,8 +538,8 @@ class SRFWeatherSensor(CoordinatorEntity[SRFWeatherCoordinator], SensorEntity):
         else:
             rows = data.get("hours", [])
 
-        if not rows:
+        idx = self.entity_description.index
+        if idx >= len(rows):
             return None
 
-        # Apply the field extractor to the first (current) row.
-        return self.entity_description.value_fn(rows[0])
+        return self.entity_description.value_fn(rows[idx])
