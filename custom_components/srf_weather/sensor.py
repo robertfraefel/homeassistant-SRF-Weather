@@ -62,9 +62,12 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_NAME,
+    DEGREE,
     PERCENTAGE,
     UnitOfIrradiance,
     UnitOfLength,
+    UnitOfPressure,
+    UnitOfSpeed,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -102,7 +105,9 @@ class SRFSensorEntityDescription(SensorEntityDescription):
 # ---------------------------------------------------------------------------
 
 SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
-    # -- Hourly sensors ------------------------------------------------------
+    # =====================================================================
+    # Hourly sensors (from hours[0])
+    # =====================================================================
     SRFSensorEntityDescription(
         key="felt_temperature",
         translation_key="felt_temperature",
@@ -110,8 +115,37 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:thermometer-lines",
-        # TTTFEEL_C = apparent/felt temperature (considers wind chill & humidity)
         value_fn=lambda d: d.get("TTTFEEL_C"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="temperature",
+        translation_key="temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermometer",
+        value_fn=lambda d: d.get("TTT_C"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="temperature_range_low",
+        translation_key="temperature_range_low",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermometer-chevron-down",
+        value_fn=lambda d: d.get("TTL_C"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="temperature_range_high",
+        translation_key="temperature_range_high",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermometer-chevron-up",
+        value_fn=lambda d: d.get("TTH_C"),
         source="hourly",
     ),
     SRFSensorEntityDescription(
@@ -121,8 +155,75 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:water-thermometer",
-        # DEWPOINT_C = temperature at which air reaches 100% relative humidity
         value_fn=lambda d: d.get("DEWPOINT_C"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="humidity",
+        translation_key="humidity",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.HUMIDITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:water-percent",
+        value_fn=lambda d: d.get("RELHUM_PERCENT"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="pressure",
+        translation_key="pressure",
+        native_unit_of_measurement=UnitOfPressure.HPA,
+        device_class=SensorDeviceClass.ATMOSPHERIC_PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:gauge",
+        value_fn=lambda d: d.get("PRESSURE_HPA"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="precipitation",
+        translation_key="precipitation",
+        native_unit_of_measurement=UnitOfLength.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:water",
+        value_fn=lambda d: d.get("RRR_MM"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="precipitation_probability",
+        translation_key="precipitation_probability",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-rainy",
+        value_fn=lambda d: d.get("PROBPCP_PERCENT"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="wind_speed",
+        translation_key="wind_speed",
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-windy",
+        value_fn=lambda d: d.get("FF_KMH"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="wind_gust_speed",
+        translation_key="wind_gust_speed",
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-windy-variant",
+        value_fn=lambda d: d.get("FX_KMH"),
+        source="hourly",
+    ),
+    SRFSensorEntityDescription(
+        key="wind_direction",
+        translation_key="wind_direction",
+        native_unit_of_measurement=DEGREE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:compass-outline",
+        value_fn=lambda d: d.get("DD_DEG") if d.get("DD_DEG", -1) >= 0 else None,
         source="hourly",
     ),
     SRFSensorEntityDescription(
@@ -131,7 +232,6 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.MINUTES,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny-alert",
-        # SUN_MIN = minutes of sunshine recorded in the previous hour
         value_fn=lambda d: d.get("SUN_MIN"),
         source="hourly",
     ),
@@ -142,39 +242,96 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.IRRADIANCE,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:solar-power",
-        # IRRADIANCE_WM2 = global horizontal irradiance (direct + diffuse)
         value_fn=lambda d: d.get("IRRADIANCE_WM2"),
         source="hourly",
     ),
     SRFSensorEntityDescription(
         key="fresh_snow",
         translation_key="fresh_snow",
+        native_unit_of_measurement=UnitOfLength.CENTIMETERS,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:snowflake",
+        # API field is FRESHSNOW_CM (centimeters)
+        value_fn=lambda d: d.get("FRESHSNOW_CM"),
+        source="hourly",
+    ),
+    # =====================================================================
+    # Daily sensors (from days[0])
+    # =====================================================================
+    SRFSensorEntityDescription(
+        key="temperature_max",
+        translation_key="temperature_max",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermometer-high",
+        value_fn=lambda d: d.get("TX_C"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="temperature_min",
+        translation_key="temperature_min",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:thermometer-low",
+        value_fn=lambda d: d.get("TN_C"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="precipitation_daily",
+        translation_key="precipitation_daily",
         native_unit_of_measurement=UnitOfLength.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:snowflake",
-        # FRESHSNOW_MM = new snow depth accumulated in the previous hour
-        value_fn=lambda d: d.get("FRESHSNOW_MM"),
-        source="hourly",
+        icon="mdi:water",
+        value_fn=lambda d: d.get("RRR_MM"),
+        source="daily",
     ),
     SRFSensorEntityDescription(
-        key="precipitation_probability",
-        translation_key="precipitation_probability",
+        key="precipitation_probability_daily",
+        translation_key="precipitation_probability_daily",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-rainy",
-        # PROBPCP_PERCENT = model probability that precipitation will occur
         value_fn=lambda d: d.get("PROBPCP_PERCENT"),
-        source="hourly",
+        source="daily",
     ),
-    # -- Daily sensors -------------------------------------------------------
+    SRFSensorEntityDescription(
+        key="wind_speed_daily",
+        translation_key="wind_speed_daily",
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-windy",
+        value_fn=lambda d: d.get("FF_KMH"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="wind_gust_speed_daily",
+        translation_key="wind_gust_speed_daily",
+        native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+        device_class=SensorDeviceClass.WIND_SPEED,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-windy-variant",
+        value_fn=lambda d: d.get("FX_KMH"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="wind_direction_daily",
+        translation_key="wind_direction_daily",
+        native_unit_of_measurement=DEGREE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:compass-outline",
+        value_fn=lambda d: d.get("DD_DEG") if d.get("DD_DEG", -1) >= 0 else None,
+        source="daily",
+    ),
     SRFSensorEntityDescription(
         key="uv_index",
         translation_key="uv_index",
-        native_unit_of_measurement=None,  # Dimensionless index
+        native_unit_of_measurement=None,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:sun-wireless",
-        # UVI = UV index at solar noon for today (scale 0–20)
         value_fn=lambda d: d.get("UVI"),
         source="daily",
     ),
@@ -184,8 +341,23 @@ SENSOR_DESCRIPTIONS: tuple[SRFSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.HOURS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
-        # SUN_H = total expected sunshine hours for the day (0–25 cap in API)
         value_fn=lambda d: d.get("SUN_H"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="sunrise",
+        translation_key="sunrise",
+        native_unit_of_measurement=None,
+        icon="mdi:weather-sunset-up",
+        value_fn=lambda d: d.get("SUNRISE"),
+        source="daily",
+    ),
+    SRFSensorEntityDescription(
+        key="sunset",
+        translation_key="sunset",
+        native_unit_of_measurement=None,
+        icon="mdi:weather-sunset-down",
+        value_fn=lambda d: d.get("SUNSET"),
         source="daily",
     ),
 )

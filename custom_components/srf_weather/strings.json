@@ -34,30 +34,32 @@
   },
   "entity": {
     "sensor": {
-      "felt_temperature": {
-        "name": "Felt Temperature"
-      },
-      "dew_point": {
-        "name": "Dew Point"
-      },
-      "sunshine_duration": {
-        "name": "Sunshine Duration"
-      },
-      "irradiance": {
-        "name": "Solar Irradiance"
-      },
-      "fresh_snow": {
-        "name": "Fresh Snow"
-      },
-      "uv_index": {
-        "name": "UV Index"
-      },
-      "sunshine_hours": {
-        "name": "Sunshine Hours"
-      },
-      "precipitation_probability": {
-        "name": "Precipitation Probability"
-      }
+      "felt_temperature": { "name": "Felt Temperature" },
+      "temperature": { "name": "Temperature" },
+      "temperature_range_low": { "name": "Temperature Range Low" },
+      "temperature_range_high": { "name": "Temperature Range High" },
+      "dew_point": { "name": "Dew Point" },
+      "humidity": { "name": "Humidity" },
+      "pressure": { "name": "Atmospheric Pressure" },
+      "precipitation": { "name": "Precipitation" },
+      "precipitation_probability": { "name": "Precipitation Probability" },
+      "wind_speed": { "name": "Wind Speed" },
+      "wind_gust_speed": { "name": "Wind Gust Speed" },
+      "wind_direction": { "name": "Wind Direction" },
+      "sunshine_duration": { "name": "Sunshine Duration" },
+      "irradiance": { "name": "Solar Irradiance" },
+      "fresh_snow": { "name": "Fresh Snow" },
+      "temperature_max": { "name": "Temperature Max" },
+      "temperature_min": { "name": "Temperature Min" },
+      "precipitation_daily": { "name": "Precipitation Daily" },
+      "precipitation_probability_daily": { "name": "Precipitation Probability Daily" },
+      "wind_speed_daily": { "name": "Wind Speed Daily" },
+      "wind_gust_speed_daily": { "name": "Wind Gust Speed Daily" },
+      "wind_direction_daily": { "name": "Wind Direction Daily" },
+      "uv_index": { "name": "UV Index" },
+      "sunshine_hours": { "name": "Sunshine Hours" },
+      "sunrise": { "name": "Sunrise" },
+      "sunset": { "name": "Sunset" }
     }
   }
 }

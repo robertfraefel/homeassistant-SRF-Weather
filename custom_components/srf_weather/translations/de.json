@@ -34,30 +34,32 @@
   },
   "entity": {
     "sensor": {
-      "felt_temperature": {
-        "name": "Gefühlte Temperatur"
-      },
-      "dew_point": {
-        "name": "Taupunkt"
-      },
-      "sunshine_duration": {
-        "name": "Sonnenscheindauer"
-      },
-      "irradiance": {
-        "name": "Solare Einstrahlung"
-      },
-      "fresh_snow": {
-        "name": "Neuschnee"
-      },
-      "uv_index": {
-        "name": "UV-Index"
-      },
-      "sunshine_hours": {
-        "name": "Sonnenstunden"
-      },
-      "precipitation_probability": {
-        "name": "Niederschlagswahrscheinlichkeit"
-      }
+      "felt_temperature": { "name": "Gefühlte Temperatur" },
+      "temperature": { "name": "Temperatur" },
+      "temperature_range_low": { "name": "Temperatur Untergrenze" },
+      "temperature_range_high": { "name": "Temperatur Obergrenze" },
+      "dew_point": { "name": "Taupunkt" },
+      "humidity": { "name": "Luftfeuchtigkeit" },
+      "pressure": { "name": "Luftdruck" },
+      "precipitation": { "name": "Niederschlag" },
+      "precipitation_probability": { "name": "Niederschlagswahrscheinlichkeit" },
+      "wind_speed": { "name": "Windgeschwindigkeit" },
+      "wind_gust_speed": { "name": "Windböen" },
+      "wind_direction": { "name": "Windrichtung" },
+      "sunshine_duration": { "name": "Sonnenscheindauer" },
+      "irradiance": { "name": "Solare Einstrahlung" },
+      "fresh_snow": { "name": "Neuschnee" },
+      "temperature_max": { "name": "Höchsttemperatur" },
+      "temperature_min": { "name": "Tiefsttemperatur" },
+      "precipitation_daily": { "name": "Niederschlag TagesTotal" },
+      "precipitation_probability_daily": { "name": "Niederschlagswahrscheinlichkeit Tag" },
+      "wind_speed_daily": { "name": "Windgeschwindigkeit Tag" },
+      "wind_gust_speed_daily": { "name": "Windböen Tag" },
+      "wind_direction_daily": { "name": "Windrichtung Tag" },
+      "uv_index": { "name": "UV-Index" },
+      "sunshine_hours": { "name": "Sonnenstunden" },
+      "sunrise": { "name": "Sonnenaufgang" },
+      "sunset": { "name": "Sonnenuntergang" }
     }
   }
 }
