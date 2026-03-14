@@ -29,7 +29,9 @@ The response is a ``ForecastPointWeek`` JSON object containing:
 from __future__ import annotations
 
 import base64
+import json
 import logging
+import os
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -183,6 +185,21 @@ class SRFWeatherAPI:
         if cache_key in self._geo_id_cache:
             return self._geo_id_cache[cache_key]
 
+        # Check persistent file cache
+        try:
+            if os.path.exists(_GEO_CACHE_FILE):
+                with open(_GEO_CACHE_FILE, "r") as fh:
+                    file_cache = json.load(fh)
+                if cache_key in file_cache:
+                    self._geo_id_cache[cache_key] = file_cache[cache_key]
+                    _LOGGER.debug(
+                        "SRF Weather: loaded geo ID from file cache: %s",
+                        file_cache[cache_key],
+                    )
+                    return file_cache[cache_key]
+        except (OSError, json.JSONDecodeError, KeyError):
+            pass  # file missing or corrupt - fall through to API
+
         token = await self._get_token()
         headers = {"Authorization": f"Bearer {token}"}
         url = f"{BASE_URL}/geolocations"
@@ -213,6 +230,19 @@ class SRFWeatherAPI:
                 # The API returns a list; pick the first (nearest) entry.
                 geo_id = data[0]["id"]
                 self._geo_id_cache[cache_key] = geo_id
+
+                # Persist to file so we survive HA restarts
+                try:
+                    file_cache = {}
+                    if os.path.exists(_GEO_CACHE_FILE):
+                        with open(_GEO_CACHE_FILE, "r") as fh:
+                            file_cache = json.load(fh)
+                    file_cache[cache_key] = geo_id
+                    with open(_GEO_CACHE_FILE, "w") as fh:
+                        json.dump(file_cache, fh)
+                except OSError:
+                    pass  # non-critical
+
                 _LOGGER.debug(
                     "SRF Weather: resolved (%s, %s) -> geolocation ID %s",
                     lat, lon, geo_id,
@@ -307,3 +337,4 @@ class SRFWeatherAPI:
             return True
         except (SRFWeatherAuthError, SRFWeatherAPIError):
             return False
+
