@@ -66,6 +66,7 @@
       "forecast_d1_precipitation": { "name": "Forecast D+1 Precipitation" },
       "forecast_d1_precip_prob": { "name": "Forecast D+1 Precip Probability" },
       "forecast_d1_wind_speed": { "name": "Forecast D+1 Wind Speed" },
+      "forecast_d1_wind_gust_speed": { "name": "Forecast D+1 Wind Gust Speed" },
       "forecast_d1_sunshine_hours": { "name": "Forecast D+1 Sunshine Hours" },
       "forecast_d2_condition": { "name": "Forecast D+2 Condition" },
       "forecast_d2_temp_max": { "name": "Forecast D+2 Temp Max" },
@@ -73,6 +74,7 @@
       "forecast_d2_precipitation": { "name": "Forecast D+2 Precipitation" },
       "forecast_d2_precip_prob": { "name": "Forecast D+2 Precip Probability" },
       "forecast_d2_wind_speed": { "name": "Forecast D+2 Wind Speed" },
+      "forecast_d2_wind_gust_speed": { "name": "Forecast D+2 Wind Gust Speed" },
       "forecast_d2_sunshine_hours": { "name": "Forecast D+2 Sunshine Hours" },
       "forecast_d3_condition": { "name": "Forecast D+3 Condition" },
       "forecast_d3_temp_max": { "name": "Forecast D+3 Temp Max" },
@@ -80,6 +82,7 @@
       "forecast_d3_precipitation": { "name": "Forecast D+3 Precipitation" },
       "forecast_d3_precip_prob": { "name": "Forecast D+3 Precip Probability" },
       "forecast_d3_wind_speed": { "name": "Forecast D+3 Wind Speed" },
+      "forecast_d3_wind_gust_speed": { "name": "Forecast D+3 Wind Gust Speed" },
       "forecast_d3_sunshine_hours": { "name": "Forecast D+3 Sunshine Hours" },
       "forecast_d4_condition": { "name": "Forecast D+4 Condition" },
       "forecast_d4_temp_max": { "name": "Forecast D+4 Temp Max" },
@@ -87,6 +90,7 @@
       "forecast_d4_precipitation": { "name": "Forecast D+4 Precipitation" },
       "forecast_d4_precip_prob": { "name": "Forecast D+4 Precip Probability" },
       "forecast_d4_wind_speed": { "name": "Forecast D+4 Wind Speed" },
+      "forecast_d4_wind_gust_speed": { "name": "Forecast D+4 Wind Gust Speed" },
       "forecast_d4_sunshine_hours": { "name": "Forecast D+4 Sunshine Hours" },
       "forecast_d5_condition": { "name": "Forecast D+5 Condition" },
       "forecast_d5_temp_max": { "name": "Forecast D+5 Temp Max" },
@@ -94,6 +98,7 @@
       "forecast_d5_precipitation": { "name": "Forecast D+5 Precipitation" },
       "forecast_d5_precip_prob": { "name": "Forecast D+5 Precip Probability" },
       "forecast_d5_wind_speed": { "name": "Forecast D+5 Wind Speed" },
+      "forecast_d5_wind_gust_speed": { "name": "Forecast D+5 Wind Gust Speed" },
       "forecast_d5_sunshine_hours": { "name": "Forecast D+5 Sunshine Hours" },
       "forecast_d6_condition": { "name": "Forecast D+6 Condition" },
       "forecast_d6_temp_max": { "name": "Forecast D+6 Temp Max" },
@@ -101,6 +106,7 @@
       "forecast_d6_precipitation": { "name": "Forecast D+6 Precipitation" },
       "forecast_d6_precip_prob": { "name": "Forecast D+6 Precip Probability" },
       "forecast_d6_wind_speed": { "name": "Forecast D+6 Wind Speed" },
+      "forecast_d6_wind_gust_speed": { "name": "Forecast D+6 Wind Gust Speed" },
       "forecast_d6_sunshine_hours": { "name": "Forecast D+6 Sunshine Hours" }
     }
   }

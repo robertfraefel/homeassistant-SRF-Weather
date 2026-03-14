@@ -66,6 +66,7 @@
       "forecast_d1_precipitation": { "name": "Vorhersage T+1 Niederschlag" },
       "forecast_d1_precip_prob": { "name": "Vorhersage T+1 Regenwahrsch." },
       "forecast_d1_wind_speed": { "name": "Vorhersage T+1 Wind" },
+      "forecast_d1_wind_gust_speed": { "name": "Vorhersage T+1 Windböen" },
       "forecast_d1_sunshine_hours": { "name": "Vorhersage T+1 Sonnenstd." },
       "forecast_d2_condition": { "name": "Vorhersage T+2 Wetterlage" },
       "forecast_d2_temp_max": { "name": "Vorhersage T+2 Höchsttemp." },
@@ -73,6 +74,7 @@
       "forecast_d2_precipitation": { "name": "Vorhersage T+2 Niederschlag" },
       "forecast_d2_precip_prob": { "name": "Vorhersage T+2 Regenwahrsch." },
       "forecast_d2_wind_speed": { "name": "Vorhersage T+2 Wind" },
+      "forecast_d2_wind_gust_speed": { "name": "Vorhersage T+2 Windböen" },
       "forecast_d2_sunshine_hours": { "name": "Vorhersage T+2 Sonnenstd." },
       "forecast_d3_condition": { "name": "Vorhersage T+3 Wetterlage" },
       "forecast_d3_temp_max": { "name": "Vorhersage T+3 Höchsttemp." },
@@ -80,6 +82,7 @@
       "forecast_d3_precipitation": { "name": "Vorhersage T+3 Niederschlag" },
       "forecast_d3_precip_prob": { "name": "Vorhersage T+3 Regenwahrsch." },
       "forecast_d3_wind_speed": { "name": "Vorhersage T+3 Wind" },
+      "forecast_d3_wind_gust_speed": { "name": "Vorhersage T+3 Windböen" },
       "forecast_d3_sunshine_hours": { "name": "Vorhersage T+3 Sonnenstd." },
       "forecast_d4_condition": { "name": "Vorhersage T+4 Wetterlage" },
       "forecast_d4_temp_max": { "name": "Vorhersage T+4 Höchsttemp." },
@@ -87,6 +90,7 @@
       "forecast_d4_precipitation": { "name": "Vorhersage T+4 Niederschlag" },
       "forecast_d4_precip_prob": { "name": "Vorhersage T+4 Regenwahrsch." },
       "forecast_d4_wind_speed": { "name": "Vorhersage T+4 Wind" },
+      "forecast_d4_wind_gust_speed": { "name": "Vorhersage T+4 Windböen" },
       "forecast_d4_sunshine_hours": { "name": "Vorhersage T+4 Sonnenstd." },
       "forecast_d5_condition": { "name": "Vorhersage T+5 Wetterlage" },
       "forecast_d5_temp_max": { "name": "Vorhersage T+5 Höchsttemp." },
@@ -94,6 +98,7 @@
       "forecast_d5_precipitation": { "name": "Vorhersage T+5 Niederschlag" },
       "forecast_d5_precip_prob": { "name": "Vorhersage T+5 Regenwahrsch." },
       "forecast_d5_wind_speed": { "name": "Vorhersage T+5 Wind" },
+      "forecast_d5_wind_gust_speed": { "name": "Vorhersage T+5 Windböen" },
       "forecast_d5_sunshine_hours": { "name": "Vorhersage T+5 Sonnenstd." },
       "forecast_d6_condition": { "name": "Vorhersage T+6 Wetterlage" },
       "forecast_d6_temp_max": { "name": "Vorhersage T+6 Höchsttemp." },
@@ -101,6 +106,7 @@
       "forecast_d6_precipitation": { "name": "Vorhersage T+6 Niederschlag" },
       "forecast_d6_precip_prob": { "name": "Vorhersage T+6 Regenwahrsch." },
       "forecast_d6_wind_speed": { "name": "Vorhersage T+6 Wind" },
+      "forecast_d6_wind_gust_speed": { "name": "Vorhersage T+6 Windböen" },
       "forecast_d6_sunshine_hours": { "name": "Vorhersage T+6 Sonnenstd." }
     }
   }

@@ -437,6 +437,17 @@ def _build_forecast_descriptions() -> tuple[SRFSensorEntityDescription, ...]:
                 index=day,
             ),
             SRFSensorEntityDescription(
+                key=f"forecast_{label}_wind_gust_speed",
+                translation_key=f"forecast_{label}_wind_gust_speed",
+                native_unit_of_measurement=UnitOfSpeed.KILOMETERS_PER_HOUR,
+                device_class=SensorDeviceClass.WIND_SPEED,
+                state_class=SensorStateClass.MEASUREMENT,
+                icon="mdi:weather-windy-variant",
+                value_fn=lambda d: d.get("FX_KMH"),
+                source="daily",
+                index=day,
+            ),
+            SRFSensorEntityDescription(
                 key=f"forecast_{label}_sunshine_hours",
                 translation_key=f"forecast_{label}_sunshine_hours",
                 native_unit_of_measurement=UnitOfTime.HOURS,
