@@ -40,6 +40,9 @@ from .const import BASE_URL, TOKEN_URL
 
 _LOGGER = logging.getLogger(__name__)
 
+# Persistent file cache for geolocation ID lookups (survives HA restarts).
+_GEO_CACHE_FILE = os.path.join(os.path.dirname(__file__), ".geo_cache.json")
+
 
 class SRFWeatherAuthError(Exception):
     """Raised when the SRG SSR API rejects the client credentials.
@@ -229,6 +232,11 @@ class SRFWeatherAPI:
                     self._token = None
                     raise SRFWeatherAuthError(
                         f"Unauthorized fetching geolocations (HTTP {resp.status})"
+                    )
+                if resp.status == 429:
+                    body = await resp.text()
+                    raise SRFWeatherRateLimitError(
+                        f"API quota exceeded (HTTP 429): {body}"
                     )
                 if resp.status != 200:
                     body = await resp.text()
