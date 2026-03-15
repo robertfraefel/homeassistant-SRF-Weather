@@ -120,7 +120,7 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_LATITUDE, default=default_lat): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=default_lon): cv.longitude,
                 vol.Optional(CONF_MAX_REQUESTS, default=DEFAULT_MAX_REQUESTS): NumberSelector(
-                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX)
+                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX, unit_of_measurement="/Tag")
                 ),
             }
         )
@@ -179,7 +179,7 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_LATITUDE, default=entry.data.get(CONF_LATITUDE)): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=entry.data.get(CONF_LONGITUDE)): cv.longitude,
                 vol.Optional(CONF_MAX_REQUESTS, default=entry.data.get(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)): NumberSelector(
-                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX)
+                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX, unit_of_measurement="/Tag")
                 ),
             }
         )
