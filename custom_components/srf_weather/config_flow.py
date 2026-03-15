@@ -29,6 +29,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig, NumberSelectorMode
 import homeassistant.helpers.config_validation as cv
 
 from .api import SRFWeatherAPI
@@ -118,8 +119,8 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_CLIENT_SECRET): str,
                 vol.Required(CONF_LATITUDE, default=default_lat): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=default_lon): cv.longitude,
-                vol.Optional(CONF_MAX_REQUESTS, default=DEFAULT_MAX_REQUESTS): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=200)
+                vol.Optional(CONF_MAX_REQUESTS, default=DEFAULT_MAX_REQUESTS): NumberSelector(
+                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX)
                 ),
             }
         )
@@ -177,8 +178,8 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_CLIENT_SECRET, default=entry.data.get(CONF_CLIENT_SECRET, "")): str,
                 vol.Required(CONF_LATITUDE, default=entry.data.get(CONF_LATITUDE)): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=entry.data.get(CONF_LONGITUDE)): cv.longitude,
-                vol.Optional(CONF_MAX_REQUESTS, default=entry.data.get(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=200)
+                vol.Optional(CONF_MAX_REQUESTS, default=entry.data.get(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)): NumberSelector(
+                    NumberSelectorConfig(min=1, max=200, step=1, mode=NumberSelectorMode.BOX)
                 ),
             }
         )
