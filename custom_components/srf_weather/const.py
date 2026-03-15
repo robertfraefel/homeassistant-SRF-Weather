@@ -54,6 +54,8 @@ DEFAULT_SCAN_INTERVAL = 1800  # 30 minutes
 # the two below are integration-specific.
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
+CONF_MAX_REQUESTS = "max_requests"
+DEFAULT_MAX_REQUESTS = 40
 
 # -------------------------------------------------------------------------
 # Platforms

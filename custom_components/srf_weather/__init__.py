@@ -25,7 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SRFWeatherAPI
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, DOMAIN
+from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS, DOMAIN
 from .coordinator import SRFWeatherCoordinator
 
 ICONS_URL = f"/{DOMAIN}/icons"
@@ -34,6 +34,15 @@ ICONS_DIR = str(pathlib.Path(__file__).parent / "icons")
 # Platforms that this integration provides entities for.
 # HA will call ``async_setup_entry`` in each platform module automatically.
 PLATFORMS: list[Platform] = [Platform.WEATHER, Platform.SENSOR]
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate config entries to the current schema version."""
+    if entry.version < 2:
+        new_data = dict(entry.data)
+        new_data.setdefault(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)
+        hass.config_entries.async_update_entry(entry, data=new_data, version=2)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -62,16 +71,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     api.set_storage_dir(hass.config.config_dir)
 
+    max_requests = entry.data.get(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)
+
     coordinator = SRFWeatherCoordinator(
         hass,
         api,
         entry.data[CONF_LATITUDE],
         entry.data[CONF_LONGITUDE],
+        max_requests=max_requests,
+        config_dir=hass.config.config_dir,
     )
 
-    # Block until the first successful fetch.  If this raises, HA marks the
-    # entry as "not ready" and retries with exponential back-off.
-    await coordinator.async_config_entry_first_refresh()
+    # Try loading cached data first to avoid an API call on restart.
+    # Only fall back to a live fetch if no usable cache exists.
+    cache_loaded = await coordinator.async_load_cached_data()
+    if not cache_loaded:
+        await coordinator.async_config_entry_first_refresh()
 
     # Register static path for SRF weather icons (only once per HA instance).
     if DOMAIN not in hass.data:

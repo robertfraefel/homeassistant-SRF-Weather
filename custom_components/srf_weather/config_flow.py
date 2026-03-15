@@ -32,7 +32,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 
 from .api import SRFWeatherAPI
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, DOMAIN
+from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                  the ``data`` dict structure changes and a migration is needed.
     """
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -118,6 +118,9 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_CLIENT_SECRET): str,
                 vol.Required(CONF_LATITUDE, default=default_lat): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=default_lon): cv.longitude,
+                vol.Optional(CONF_MAX_REQUESTS, default=DEFAULT_MAX_REQUESTS): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=200)
+                ),
             }
         )
 
@@ -174,6 +177,9 @@ class SRFWeatherConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_CLIENT_SECRET, default=entry.data.get(CONF_CLIENT_SECRET, "")): str,
                 vol.Required(CONF_LATITUDE, default=entry.data.get(CONF_LATITUDE)): cv.latitude,
                 vol.Required(CONF_LONGITUDE, default=entry.data.get(CONF_LONGITUDE)): cv.longitude,
+                vol.Optional(CONF_MAX_REQUESTS, default=entry.data.get(CONF_MAX_REQUESTS, DEFAULT_MAX_REQUESTS)): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=200)
+                ),
             }
         )
 

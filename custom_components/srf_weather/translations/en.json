@@ -9,7 +9,11 @@
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "latitude": "Latitude",
-          "longitude": "Longitude"
+          "longitude": "Longitude",
+          "max_requests": "Max API Requests per Day"
+        },
+        "data_description": {
+          "max_requests": "Free plan allows 50/day. Default 40 leaves headroom for restarts. Polling interval is calculated automatically."
         }
       },
       "reconfigure": {
@@ -20,7 +24,11 @@
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "latitude": "Latitude",
-          "longitude": "Longitude"
+          "longitude": "Longitude",
+          "max_requests": "Max API Requests per Day"
+        },
+        "data_description": {
+          "max_requests": "Free plan allows 50/day. Default 40 leaves headroom for restarts. Polling interval is calculated automatically."
         }
       }
     },

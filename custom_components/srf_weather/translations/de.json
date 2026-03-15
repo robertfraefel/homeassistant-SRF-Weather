@@ -9,7 +9,11 @@
           "client_id": "Client-ID",
           "client_secret": "Client-Secret",
           "latitude": "Breitengrad",
-          "longitude": "Längengrad"
+          "longitude": "Längengrad",
+          "max_requests": "Max. API-Abfragen pro Tag"
+        },
+        "data_description": {
+          "max_requests": "Gratis-Plan erlaubt 50/Tag. Standard 40 lässt Spielraum für Neustarts. Abfrageintervall wird automatisch berechnet."
         }
       },
       "reconfigure": {
@@ -20,7 +24,11 @@
           "client_id": "Client-ID",
           "client_secret": "Client-Secret",
           "latitude": "Breitengrad",
-          "longitude": "Längengrad"
+          "longitude": "Längengrad",
+          "max_requests": "Max. API-Abfragen pro Tag"
+        },
+        "data_description": {
+          "max_requests": "Gratis-Plan erlaubt 50/Tag. Standard 40 lässt Spielraum für Neustarts. Abfrageintervall wird automatisch berechnet."
         }
       }
     },
