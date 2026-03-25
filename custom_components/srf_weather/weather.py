@@ -2,8 +2,8 @@
 
 Provides a single ``WeatherEntity`` per config entry that surfaces:
 
-Current conditions (from ``hours[0]``)
-  - Condition string (mapped from ``symbol_code`` via ``SYMBOL_TO_CONDITION``)
+Current conditions (from the hourly slot closest to *now*)
+  - Condition string (mapped from ``symbol_code`` via ``map_symbol_code``)
   - Temperature (°C)
   - Humidity (%)
   - Wind speed (km/h)
@@ -40,7 +40,7 @@ Days:
 
 Hours:
   ``date_time``      ISO-8601 datetime string for the start of the hour
-  ``symbol_code``    Weather symbol for this hour
+  ``symbol_code``    Weather symbol for this hour (positive = day, negative = night)
   ``TTT_C``          Temperature (°C)
   ``RELHUM_PERCENT`` Relative humidity (%)
   ``FF_KMH``         Average wind speed (km/h)
@@ -53,6 +53,8 @@ Hours:
 """
 
 from __future__ import annotations
+
+from datetime import datetime, timezone
 
 from homeassistant.components.weather import (
     Forecast,
@@ -72,7 +74,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SYMBOL_TO_CONDITION
+from .const import DOMAIN, SYMBOL_TO_CONDITION, map_symbol_code
 from .coordinator import SRFWeatherCoordinator
 
 ICONS_URL = f"/{DOMAIN}/icons"
@@ -162,22 +164,37 @@ class SRFWeatherEntity(CoordinatorEntity[SRFWeatherCoordinator], WeatherEntity):
 
     @property
     def _current_hour(self) -> dict:
-        """Return the first hourly forecast slot as a convenience accessor.
+        """Return the hourly slot closest to *now*.
 
-        The first element of ``hours`` represents the current (or most recent)
-        hour.  An empty dict is returned as a safe fallback so that all
-        property callers can use ``.get()`` without raising ``IndexError``.
+        The SRF API returns hours starting from midnight of the current day,
+        so ``hours[0]`` is often in the past.  This property finds the last
+        slot whose ``date_time`` is at or before the current UTC time, which
+        gives the most recent observation-like data.
+
+        An empty dict is returned as a safe fallback so that all property
+        callers can use ``.get()`` without raising ``IndexError``.
         """
         hours = self.coordinator.data.get("hours", [])
-        return hours[0] if hours else {}
+        if not hours:
+            return {}
+
+        now = datetime.now(timezone.utc)
+        best = hours[0]
+        for hour in hours:
+            dt_str = hour.get("date_time")
+            if dt_str is None:
+                continue
+            dt = datetime.fromisoformat(dt_str)
+            if dt <= now:
+                best = hour
+            else:
+                break
+        return best
 
     @property
     def condition(self) -> str | None:
         """Current weather condition string, mapped from ``symbol_code``."""
-        symbol = self._current_hour.get("symbol_code")
-        if symbol is None:
-            return None
-        return SYMBOL_TO_CONDITION.get(symbol)
+        return map_symbol_code(self._current_hour.get("symbol_code"))
 
     @property
     def entity_picture(self) -> str | None:
@@ -263,7 +280,7 @@ class SRFWeatherEntity(CoordinatorEntity[SRFWeatherCoordinator], WeatherEntity):
             forecasts.append(
                 Forecast(
                     datetime=day["date_time"],
-                    condition=SYMBOL_TO_CONDITION.get(day.get("symbol_code")),
+                    condition=map_symbol_code(day.get("symbol_code")),
                     native_temperature=day.get("TX_C"),       # Daily maximum
                     native_templow=day.get("TN_C"),            # Daily minimum
                     native_precipitation=day.get("RRR_MM"),
@@ -296,7 +313,7 @@ class SRFWeatherEntity(CoordinatorEntity[SRFWeatherCoordinator], WeatherEntity):
             forecasts.append(
                 Forecast(
                     datetime=hour["date_time"],
-                    condition=SYMBOL_TO_CONDITION.get(hour.get("symbol_code")),
+                    condition=map_symbol_code(hour.get("symbol_code")),
                     native_temperature=hour.get("TTT_C"),
                     native_precipitation=hour.get("RRR_MM"),
                     precipitation_probability=hour.get("PROBPCP_PERCENT"),

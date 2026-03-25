@@ -119,3 +119,22 @@ SYMBOL_TO_CONDITION: dict[int, str] = {
     39: "windy-variant",    # Very windy / storm-force
     40: "exceptional",      # Extreme or exceptional weather event
 }
+
+
+def map_symbol_code(symbol: int | None) -> str | None:
+    """Map a symbol_code (positive or negative) to a HA condition string.
+
+    The SRF API uses negative codes for night-time conditions, where ``-N``
+    is the night variant of daytime code ``N``.  For codes that would map to
+    ``"sunny"`` during the day, the night equivalent ``"clear-night"`` is
+    returned instead.
+    """
+    if symbol is None:
+        return None
+    if symbol >= 0:
+        return SYMBOL_TO_CONDITION.get(symbol)
+    # Negative code → night variant of abs(symbol)
+    condition = SYMBOL_TO_CONDITION.get(abs(symbol))
+    if condition == "sunny":
+        return "clear-night"
+    return condition

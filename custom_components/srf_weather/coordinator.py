@@ -21,7 +21,7 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -200,3 +200,25 @@ class SRFWeatherCoordinator(DataUpdateCoordinator[dict]):
             pass  # non-critical
 
         return data
+
+    def current_hour_index(self) -> int:
+        """Return the index of the hourly slot closest to *now*.
+
+        The SRF API returns hours starting from midnight, so index 0 is
+        often in the past.  This finds the last slot whose ``date_time``
+        is at or before the current time.
+        """
+        hours = (self.data or {}).get("hours", [])
+        if not hours:
+            return 0
+        now = datetime.now(timezone.utc)
+        best = 0
+        for i, hour in enumerate(hours):
+            dt_str = hour.get("date_time")
+            if dt_str is None:
+                continue
+            if datetime.fromisoformat(dt_str) <= now:
+                best = i
+            else:
+                break
+        return best

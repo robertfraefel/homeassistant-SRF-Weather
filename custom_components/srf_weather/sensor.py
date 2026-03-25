@@ -76,7 +76,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, SYMBOL_TO_CONDITION
+from .const import DOMAIN, SYMBOL_TO_CONDITION, map_symbol_code
 from .coordinator import SRFWeatherCoordinator
 
 ICONS_URL = f"/{DOMAIN}/icons"
@@ -378,7 +378,7 @@ def _build_forecast_descriptions() -> tuple[SRFSensorEntityDescription, ...]:
                 translation_key=f"forecast_{label}_condition",
                 native_unit_of_measurement=None,
                 icon="mdi:weather-partly-cloudy",
-                value_fn=lambda d: SYMBOL_TO_CONDITION.get(d.get("symbol_code")),
+                value_fn=lambda d: map_symbol_code(d.get("symbol_code")),
                 source="daily",
                 index=day,
             ),
@@ -548,10 +548,16 @@ class SRFWeatherSensor(CoordinatorEntity[SRFWeatherCoordinator], SensorEntity):
         # Select the correct forecast array based on the descriptor's source.
         if self.entity_description.source == "daily":
             rows = data.get("days", [])
+            idx = self.entity_description.index
         else:
             rows = data.get("hours", [])
+            # For current-hour sensors (index 0), find the slot closest to now
+            # instead of always using hours[0] which may be midnight.
+            if self.entity_description.index == 0:
+                idx = self.coordinator.current_hour_index()
+            else:
+                idx = self.entity_description.index
 
-        idx = self.entity_description.index
         if idx >= len(rows):
             return None
 
