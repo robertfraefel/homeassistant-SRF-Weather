@@ -5,16 +5,19 @@ magic strings and numbers in one place.
 
 Symbol code mapping
 -------------------
-The SRF Meteo API returns a numeric ``symbol_code`` (and ``symbol24_code`` for
-night representations) for each forecast interval.  These integers follow the
-SRF / MeteoSwiss convention where:
+The SRF Meteo API returns a numeric ``symbol_code`` for each forecast interval.
+Positive codes (1–30) represent daytime conditions; negative codes (-1 to -30)
+are their night-time equivalents.  The icon SVGs confirm two structural groups:
 
-  - Codes  1–24  represent *daytime* weather conditions.
-  - Codes 25–40  represent *night-time* or variant conditions.
+  - Codes  1–16:  sun visible (partly cloudy base) — codes 3–9 show less
+    cloud, codes 10–16 repeat the same precipitation pattern with more cloud.
+  - Codes 17–30:  cloud-only / overcast — fog (17), plain cloud (18-19),
+    and precipitation variants (20–30).
 
-The ``SYMBOL_TO_CONDITION`` dict maps each code to one of the standard Home
-Assistant weather condition strings.  Unknown codes fall back to ``None``
-(HA treats ``None`` as "unknown").
+The ``SYMBOL_TO_CONDITION`` dict maps each positive code to a standard Home
+Assistant weather condition string.  ``map_symbol_code()`` additionally handles
+negative (night) codes by looking up ``abs(code)`` and converting ``"sunny"``
+to ``"clear-night"``.
 """
 
 # -------------------------------------------------------------------------
@@ -73,51 +76,44 @@ PLATFORMS = ["weather", "sensor"]
 #   partlycloudy, pouring, rainy, snowy, snowy-rainy, sunny, windy,
 #   windy-variant
 #
-# The SRF symbol codes below are based on the SRF Meteo / MeteoSwiss
-# symbol convention.  Codes not listed here will map to ``None`` (unknown).
+# Mapping derived from the official SRF Meteo API documentation (PDF) and
+# verified against the SVG icon set (visual elements: sun, cloud, rain lines,
+# lightning bolts, snow circles).  Only codes 1–30 exist; night-time is
+# expressed via negative codes, NOT via codes 31–40.
 SYMBOL_TO_CONDITION: dict[int, str] = {
-    # --- Daytime codes (1–24) ---
-    1:  "sunny",            # Clear sky
-    2:  "sunny",            # Mostly clear, isolated high clouds
-    3:  "partlycloudy",     # Partly cloudy
-    4:  "cloudy",           # Mostly cloudy
-    5:  "cloudy",           # Overcast
-    6:  "fog",              # Fog or low stratus
-    7:  "rainy",            # Light rain / drizzle
-    8:  "rainy",            # Moderate rain
-    9:  "pouring",          # Heavy rain
-    10: "lightning-rainy",  # Thunderstorm with rain
-    11: "snowy",            # Light snowfall
-    12: "snowy",            # Moderate to heavy snowfall
-    13: "snowy-rainy",      # Sleet (mixed rain and snow)
-    14: "snowy-rainy",      # Freezing rain / glaze ice
-    15: "partlycloudy",     # Partly cloudy with high cirrus clouds
-    16: "rainy",            # Partly cloudy with showers
-    17: "lightning-rainy",  # Partly cloudy with thunderstorm shower
-    18: "snowy",            # Partly cloudy with snow shower
-    19: "snowy-rainy",      # Partly cloudy with sleet shower
-    20: "rainy",            # Overcast with rain
-    21: "pouring",          # Overcast with heavy rain
-    22: "lightning-rainy",  # Overcast with thunderstorm
-    23: "snowy",            # Overcast with snow
-    24: "snowy-rainy",      # Overcast with sleet
-    # --- Night-time / variant codes (25–40) ---
-    25: "clear-night",      # Clear night sky
-    26: "partlycloudy",     # Partly cloudy night
-    27: "fog",              # Foggy night
-    28: "rainy",            # Rainy night
-    29: "lightning-rainy",  # Thunderstorm at night
-    30: "snowy",            # Snowy night
-    31: "clear-night",      # Mostly clear night
-    32: "partlycloudy",     # Partly cloudy night (variant)
-    33: "rainy",            # Night showers
-    34: "lightning-rainy",  # Night thunderstorm showers
-    35: "snowy",            # Night snow showers
-    36: "snowy-rainy",      # Night sleet showers
-    37: "hail",             # Hail
-    38: "windy",            # Windy / blustery
-    39: "windy-variant",    # Very windy / storm-force
-    40: "exceptional",      # Extreme or exceptional weather event
+    # --- Sun visible, less cloud (1–9) ---
+    1:  "sunny",            # sonnig – clear sky, full sun
+    2:  "fog",              # Nebelbänke – sun above fog/haze bands
+    3:  "partlycloudy",     # teils sonnig – partly sunny, small cloud
+    4:  "rainy",            # Regenschauer – rain showers (sun + cloud + rain)
+    5:  "lightning-rainy",  # Gewitter mit Regen – thunderstorm with rain
+    6:  "snowy",            # Schneeschauer – snow showers (sun + cloud + snow)
+    7:  "hail",             # Gewitter mit Hagel – thunderstorm with hail
+    8:  "snowy-rainy",      # Schneeregenschauer – sleet showers (rain + snow)
+    9:  "lightning-rainy",  # Gewitter mit Schneeregen – thunderstorm with sleet
+    # --- Sun visible, more cloud (10–16) – same precipitation pattern ---
+    10: "partlycloudy",     # ziemlich sonnig – fairly sunny, larger cloud
+    11: "rainy",            # Regenschauer – rain showers (more cloud)
+    12: "lightning-rainy",  # Gewitter mit Regen – thunderstorm with rain
+    13: "snowy",            # Schneeschauer – snow showers (more cloud)
+    14: "hail",             # Gewitter mit Hagel – thunderstorm with hail
+    15: "snowy-rainy",      # Schneeregenschauer – sleet showers
+    16: "lightning-rainy",  # Gewitter mit Schneeregen – thunderstorm with sleet
+    # --- Cloud-only / overcast (17–30) ---
+    17: "fog",              # Nebel – fog (no cloud shape, just haze lines)
+    18: "cloudy",           # bewölkt – cloudy
+    19: "cloudy",           # bedeckt – overcast
+    20: "rainy",            # regnerisch – rain (cloud + rain)
+    21: "snowy",            # Schneefall – snowfall (cloud + snow)
+    22: "snowy-rainy",      # Schneeregen – sleet (cloud + rain + snow)
+    23: "pouring",          # starker Regen – heavy rain (cloud + lots of rain)
+    24: "snowy",            # starker Schneefall – heavy snowfall
+    25: "rainy",            # Regenschauer – rain showers (identical to 20)
+    26: "lightning-rainy",  # Gewitter mit Regen – thunderstorm with rain
+    27: "snowy",            # Schneefall – snowfall (identical to 21)
+    28: "hail",             # Gewitter mit Hagel – thunderstorm with hail
+    29: "snowy-rainy",      # Schneeregen – sleet (identical to 22)
+    30: "lightning-rainy",  # Gewitter mit Schneeregen – thunderstorm with sleet
 }
 
 
